@@ -1,35 +1,15 @@
 let order = [];
 
 /* =========================
-   MENU DATA (FIXED IMAGE PATHS)
+   MENU DATA
 ========================= */
 const MENU = {
   combo: [
-    {
-      name: "Chicken Biryani + Chilly Chicken + Egg",
-      price: 200,
-      img: "assets/Chicken Biryani + Chilly Chicken + Egg.png"
-    },
-    {
-      name: "2 Chappathi + Aasari Varuval",
-      price: 120,
-      img: "assets/2 Chappathi + Aasari Varuval.png"
-    },
-    {
-      name: "2 Parotta + Pepper Chicken",
-      price: 120,
-      img: "assets/2 Parotta + Pepper Chicken.png"
-    },
-    {
-      name: "3 Idly + Meen Kulambu",
-      price: 120,
-      img: "assets/3 Idly + Meen Kulambu.png"
-    },
-    {
-      name: "White Rice + Yelumbu Rasam + Chilly Chicken",
-      price: 100,
-      img: "assets/White Rice + Yelumbu Rasam + Chilly Chicken.png"
-    }
+    { name: "Chicken Biryani + Chilly Chicken + Egg", price: 200, img: "assets/Chicken Biryani + Chilly Chicken + Egg.png" },
+    { name: "2 Chappathi + Aasari Varuval", price: 120, img: "assets/2 Chappathi + Aasari Varuval.png" },
+    { name: "2 Parotta + Pepper Chicken", price: 120, img: "assets/2 Parotta + Pepper Chicken.png" },
+    { name: "3 Idly + Meen Kulambu", price: 120, img: "assets/3 Idly + Meen Kulambu.png" },
+    { name: "White Rice + Yelumbu Rasam + Chilly Chicken", price: 100, img: "assets/White Rice + Yelumbu Rasam + Chilly Chicken.png" }
   ],
 
   soup: [
@@ -70,15 +50,9 @@ function renderMenus() {
       card.className = "menu-card";
 
       card.onclick = () => addToOrder(item, 1);
-      card.ondblclick = e => {
-        e.preventDefault();
-        addToOrder(item, 1);
-      };
 
       card.innerHTML = `
-        <img src="./${item.img}"
-             alt="${item.name}"
-             onerror="this.src='./assets/placeholder.png'">
+        <img src="./${item.img}" onerror="this.src='./assets/placeholder.png'">
         <h4>${item.name}</h4>
         <div class="price">₹${item.price}</div>
       `;
@@ -89,27 +63,21 @@ function renderMenus() {
 }
 
 /* =========================
-   ADD ITEM
+   ORDER FUNCTIONS
 ========================= */
 function addToOrder(item, qty) {
-  const existing = order.find(i => i.name === item.name);
-  if (existing) existing.qty += qty;
+  const found = order.find(i => i.name === item.name);
+  if (found) found.qty += qty;
   else order.push({ ...item, qty });
   renderOrder();
 }
 
-/* =========================
-   UPDATE QTY
-========================= */
-function updateQty(index, change) {
-  order[index].qty += change;
-  if (order[index].qty <= 0) order.splice(index, 1);
+function updateQty(i, change) {
+  order[i].qty += change;
+  if (order[i].qty <= 0) order.splice(i, 1);
   renderOrder();
 }
 
-/* =========================
-   RENDER ORDER
-========================= */
 function renderOrder() {
   const list = document.getElementById("orderItems");
   if (!list) return;
@@ -117,14 +85,14 @@ function renderOrder() {
   list.innerHTML = "";
   let total = 0;
 
-  order.forEach((item, index) => {
+  order.forEach((item, i) => {
     total += item.price * item.qty;
     list.innerHTML += `
       <div class="order-row">
         <span>${item.name}</span>
-        <button class="qty-btn" onclick="updateQty(${index}, -1)">−</button>
+        <button onclick="updateQty(${i}, -1)">−</button>
         <span>${item.qty}</span>
-        <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+        <button onclick="updateQty(${i}, 1)">+</button>
         <span>₹${item.price * item.qty}</span>
       </div>
     `;
@@ -139,6 +107,7 @@ function renderOrder() {
 function showCategory(cat, btn) {
   document.querySelectorAll(".menu-grid").forEach(g => g.classList.add("hidden"));
   document.getElementById(cat).classList.remove("hidden");
+
   document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
 }
@@ -149,50 +118,40 @@ function showCategory(cat, btn) {
 function searchDishes(text) {
   text = text.toLowerCase();
   document.querySelectorAll(".menu-card").forEach(card => {
-    card.style.display = card.innerText.toLowerCase().includes(text)
-      ? "block"
-      : "none";
+    card.style.display = card.innerText.toLowerCase().includes(text) ? "block" : "none";
   });
-
-  if (text.trim()) {
-    document.querySelectorAll(".menu-grid").forEach(g => g.classList.remove("hidden"));
-  }
 }
 
 /* =========================
-   INIT (FIXED FOR VERCEL)
+   INIT (IMPORTANT)
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
   renderMenus();
+  document.querySelector(".tabs button").click(); // 👈 SHOW COMBO BY DEFAULT
 });
 
 /* =========================
    SEND & GENERATE QR
 ========================= */
 async function sendAndGenerateQR() {
-  const name = document.getElementById("custName").value.trim();
-  const phone = document.getElementById("custPhone").value.trim();
+  const name = custName.value.trim();
+  const phone = custPhone.value.trim();
 
-  if (!name || !phone) {
-    alert("Please enter customer name and phone number");
-    return;
-  }
-
-  if (order.length === 0) {
-    alert("Please add at least one item");
+  if (!name || !phone || order.length === 0) {
+    alert("Enter details and add items");
     return;
   }
 
   const payload = {
     customerName: name,
-    phone: phone,
+    phone,
     items: order,
-    total: Number(document.getElementById("total").innerText)
+    total: Number(total.innerText)
   };
 
   try {
     const res = await fetch(
-      "https://YOUR-BACKEND.onrender.com/api/bills/create",
+      "https://ebill-backend.onrender.com/api/bills/create",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -202,25 +161,10 @@ async function sendAndGenerateQR() {
 
     const data = await res.json();
 
-    if (!data.success) {
-      alert("Failed to generate QR");
-      return;
-    }
-
     const w = window.open("", "_blank");
-    w.document.write(`
-      <html>
-        <head><title>AS-Kitchen QR</title></head>
-        <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif">
-          <h2>Scan to View Bill</h2>
-          <img src="${data.qr}" width="260"/>
-          <p>Thank you for ordering at AS-Kitchen</p>
-        </body>
-      </html>
-    `);
+    w.document.write(`<img src="${data.qr}" width="260"/>`);
 
-  } catch (err) {
-    console.error(err);
-    alert("Server not reachable");
+  } catch (e) {
+    alert("Backend not reachable");
   }
 }
