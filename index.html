@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AS-Kitchen POS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <h1>AS-Kitchen</h1>
+  <div class="header-right">
+    <div class="token">TOKEN <span id="token">015</span></div>
+  </div>
+</header>
+
+<!-- TABS + SEARCH -->
+<div class="tabs-search">
+  <div class="tabs">
+    <button class="active" onclick="showCategory('combo', this)">Combo</button>
+    <button onclick="showCategory('soup', this)">Soup</button>
+    <button onclick="showCategory('starters', this)">Starters</button>
+    <button onclick="showCategory('dinner', this)">Dinner</button>
+  </div>
+
+  <input
+    type="text"
+    class="dish-search"
+    placeholder="Search dishes..."
+    onkeyup="searchDishes(this.value)"
+  />
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- MENU -->
+  <div class="menu">
+    <div id="combo" class="menu-grid"></div>
+    <div id="soup" class="menu-grid hidden"></div>
+    <div id="starters" class="menu-grid hidden"></div>
+    <div id="dinner" class="menu-grid hidden"></div>
+  </div>
+
+  <!-- ORDER SUMMARY -->
+  <div class="order">
+    <h2>Order Summary</h2>
+
+    <input placeholder="Customer Name" id="custName">
+    <input placeholder="Phone Number" id="custPhone">
+
+    <div id="orderItems" class="order-items"></div>
+
+    <div class="total">
+      Total ₹<span id="total">0</span>
+    </div>
+
+    <!-- ✅ CONNECTED TO JS -->
+    <button class="send" onclick="sendAndGenerateQR()">
+      SEND & GENERATE QR
+    </button>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

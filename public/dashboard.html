@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bill Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #fff;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #2a5298;
+    }
+
+    .status {
+      text-align: center;
+      font-weight: bold;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+
+    .pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .verified {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+      font-size: 14px;
+    }
+
+    .items {
+      margin-top: 10px;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .total {
+      border-top: 1px dashed #ccc;
+      margin-top: 10px;
+      padding-top: 10px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #28a745;
+      color: #fff;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Bill Verification</h2>
+  <div id="statusBox" class="status pending">Loading…</div>
+  <div id="details"></div>
+  <button id="verifyBtn" style="display:none;">Verify Bill</button>
+</div>
+
+<script>
+  // 🔧 CONFIG
+  const API_BASE = "https://ebill-backend.onrender.com";
+
+  const params = new URLSearchParams(window.location.search);
+  const billId = params.get("billId");
+
+  const statusBox = document.getElementById("statusBox");
+  const details = document.getElementById("details");
+  const verifyBtn = document.getElementById("verifyBtn");
+
+  if (!billId) {
+    statusBox.textContent = "Invalid or Missing QR Code";
+    verifyBtn.style.display = "none";
+  } else {
+    loadBill();
+  }
+
+  async function loadBill() {
+    try {
+      statusBox.textContent = "Loading bill…";
+
+      const res = await fetch(`${API_BASE}/api/verify/${billId}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        statusBox.textContent = "Bill not found";
+        return;
+      }
+
+      const bill = data.data;
+
+      if (bill.status === "pending") {
+        statusBox.textContent = "PENDING";
+        statusBox.className = "status pending";
+        verifyBtn.style.display = "block";
+      } else {
+        statusBox.textContent = "VERIFIED";
+        statusBox.className = "status verified";
+        verifyBtn.style.display = "none";
+      }
+
+      let html = `
+        <div class="row"><span>Customer</span><span>${bill.customerName}</span></div>
+        <div class="row"><span>Phone</span><span>${bill.customerPhone}</span></div>
+        <div class="items">
+      `;
+
+      bill.items.forEach(item => {
+        html += `
+          <div class="item">
+            <span>${item.name} × ${item.qty}</span>
+            <span>₹${item.price}</span>
+          </div>
+        `;
+      });
+
+      html += `
+        </div>
+        <div class="total">
+          <span>Total</span>
+          <span>₹${bill.totalAmount}</span>
+        </div>
+      `;
+
+      details.innerHTML = html;
+
+    } catch (err) {
+      statusBox.textContent = "Server error. Try again.";
+      console.error(err);
+    }
+  }
+
+  verifyBtn.addEventListener("click", async () => {
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = "Verifying…";
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/verify/${billId}/confirm`,
+        { method: "POST" }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        await loadBill();
+      } else {
+        alert("Verification failed");
+      }
+    } catch (err) {
+      alert("Server error");
+      console.error(err);
+    } finally {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = "Verify Bill";
+    }
+  });
+</script>
+</body>
+</html>
