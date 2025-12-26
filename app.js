@@ -33,16 +33,8 @@ const MENU = {
   ],
 
   soup: [
-    {
-      name: "Veg Soup",
-      price: 100,
-      img: "assets/Veg Soup.png"
-    },
-    {
-      name: "Non Veg Soup",
-      price: 100,
-      img: "assets/Non Veg Soup.png"
-    }
+    { name: "Veg Soup", price: 100, img: "assets/Veg Soup.png" },
+    { name: "Non Veg Soup", price: 100, img: "assets/Non Veg Soup.png" }
   ],
 
   starters: [
@@ -58,7 +50,7 @@ const MENU = {
   dinner: [
     { name: "Idly", price: 100, img: "assets/Idly.png" },
     { name: "Chappathi", price: 100, img: "assets/Chappathi.png" },
-    { name: "Dosa", price: 100, img: "assets/Dosa.png" },   // ✅ FIXED
+    { name: "Dosa", price: 100, img: "assets/Dosa.png" },
     { name: "Parotta", price: 100, img: "assets/Parotta.png" }
   ]
 };
@@ -69,6 +61,8 @@ const MENU = {
 function renderMenus() {
   Object.keys(MENU).forEach(category => {
     const container = document.getElementById(category);
+    if (!container) return;
+
     container.innerHTML = "";
 
     MENU[category].forEach(item => {
@@ -82,9 +76,9 @@ function renderMenus() {
       };
 
       card.innerHTML = `
-        <img src="${item.img}"
+        <img src="./${item.img}"
              alt="${item.name}"
-             onerror="this.src='assets/placeholder.png'">
+             onerror="this.src='./assets/placeholder.png'">
         <h4>${item.name}</h4>
         <div class="price">₹${item.price}</div>
       `;
@@ -118,6 +112,8 @@ function updateQty(index, change) {
 ========================= */
 function renderOrder() {
   const list = document.getElementById("orderItems");
+  if (!list) return;
+
   list.innerHTML = "";
   let total = 0;
 
@@ -163,8 +159,12 @@ function searchDishes(text) {
   }
 }
 
-/* INIT */
-renderMenus();
+/* =========================
+   INIT (FIXED FOR VERCEL)
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  renderMenus();
+});
 
 /* =========================
    SEND & GENERATE QR
@@ -191,11 +191,14 @@ async function sendAndGenerateQR() {
   };
 
   try {
-    const res = await fetch("http://localhost:5000/api/bills/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const res = await fetch(
+      "https://YOUR-BACKEND.onrender.com/api/bills/create",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
 
     const data = await res.json();
 
@@ -204,13 +207,10 @@ async function sendAndGenerateQR() {
       return;
     }
 
-    // Show QR in new window
     const w = window.open("", "_blank");
     w.document.write(`
       <html>
-        <head>
-          <title>AS-Kitchen QR</title>
-        </head>
+        <head><title>AS-Kitchen QR</title></head>
         <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif">
           <h2>Scan to View Bill</h2>
           <img src="${data.qr}" width="260"/>
